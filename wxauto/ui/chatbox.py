@@ -338,14 +338,30 @@ class ChatBox:
         now_msg_ids = tuple((i.runtimeid for i in msg_controls))
         if not now_msg_ids:  # 当前没有消息id
             return []
+            
+        # 调试信息
+        wxlog.debug(f"消息框ID: {self.id}")
+        wxlog.debug(f"当前消息数: {len(now_msg_ids)}")
+        wxlog.debug(f"已记录消息数: {len(self.used_msg_ids)}")
+        
         if self._empty and self.used_msg_ids:
             self._empty = False
+            
+        # 检查是否是消息框ID变化的情况
+        if self.id not in USED_MSG_IDS:
+            wxlog.debug("检测到消息框ID变化，重新初始化消息记录")
+            USED_MSG_IDS[self.id] = now_msg_ids
+            return []
+            
+        # 原有的检测逻辑
         if not self._empty and (
             (not self.used_msg_ids and now_msg_ids)  # 没有使用过的消息id，但当前有消息id
             or now_msg_ids[-1] == self.used_msg_ids[-1] # 当前最后一条消息id和上次一样
             or not set(now_msg_ids)&set(self.used_msg_ids)  # 当前消息id和上次没有交集
         ):
-            # wxlog.debug('没有新消息')
+            wxlog.debug('没有检测到新消息')
+            # 即使没有新消息，也要更新USED_MSG_IDS以防止ID变化问题
+            USED_MSG_IDS[self.id] = now_msg_ids
             return []
         
         used_msg_ids_set = set(self.used_msg_ids)
@@ -357,9 +373,15 @@ class ChatBox:
         new2 = now_msg_ids[now_msg_ids.index(last_one_msgid) + 1 :]\
             if last_one_msgid is not None else []
         new = [i for i in new1 if i in new2] if new2 else new1
+        
+        # 更新USED_MSG_IDS，保留最新的100条消息ID
         USED_MSG_IDS[self.id] = tuple(self.used_msg_ids + tuple(new))[-100:]
+        
         new_controls = [i for i in msg_controls if i.runtimeid in new]
         self.msgbox.MiddleClick()
+        
+        wxlog.debug(f"检测到新消息数: {len(new)}")
+        
         return [
                 parse_msg(msg_control, self) 
                 for msg_control 
