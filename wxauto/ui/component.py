@@ -112,7 +112,7 @@ class SelectContactWnd(BaseUISubWnd):
                 if message and msgedit.Exists(0):
                     msgedit.Click()
                     msgedit.Paste(message)
-                self.control.ButtonControl(RegexName='分别发送（\d+）').Click()
+                self.control.ButtonControl(RegexName=r'分别发送（\d+）').Click()
                 if n == len(target):
                     return WxResponse.success()
                 else:
@@ -1131,7 +1131,7 @@ class ContactManagerWindow(BaseUISubWnd):
         """获取好友人数"""
         wxlog.debug('获取好友人数')
         numText = self.Sidebar.PaneControl(Name='全部').TextControl(foundIndex=2).Name
-        return int(re.findall('\d+', numText)[0])
+        return int(re.findall(r'\d+', numText)[0])
     
     def search(self, keyword):
         """搜索好友
